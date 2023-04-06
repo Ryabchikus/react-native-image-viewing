@@ -63,7 +63,8 @@ const usePanResponder = ({
   let longPressHandlerRef: number | null = null;
 
   const meaningfulShift = MIN_DIMENSION * 0.01;
-  const scaleValue = new Animated.Value(initialScale);
+  const scaleValue = useRef(new Animated.Value(initialScale ?? 0));
+  const initialScaleRef = useRef(initialScale);
   const translateValue = new Animated.ValueXY(initialTranslate);
 
   const imageDimensions = getImageDimensionsByTranslate(
@@ -111,14 +112,21 @@ const usePanResponder = ({
     imageDimensions.height * currentScale < SCREEN_HEIGHT;
 
   useEffect(() => {
-    scaleValue.addListener(({ value }) => {
+    scaleValue.current.addListener(({ value }) => {
       if (typeof onZoom === "function") {
         onZoom(value !== initialScale);
       }
     });
 
-    return () => scaleValue.removeAllListeners();
+    return () => scaleValue.current.removeAllListeners();
   });
+
+  useEffect(() => {
+    if (initialScaleRef.current == null && initialScale != null) {
+        initialScaleRef.current = initialScale;
+        scaleValue.current.setValue(initialScale);
+    }
+}, [initialScale]);
 
   const cancelLongPressHandle = () => {
     longPressHandlerRef && clearTimeout(longPressHandlerRef);
@@ -184,7 +192,7 @@ const usePanResponder = ({
               duration: 300,
               useNativeDriver: true,
             }),
-            Animated.timing(scaleValue, {
+            Animated.timing(scaleValue.current, {
               toValue: nextScale,
               duration: 300,
               useNativeDriver: true,
@@ -273,7 +281,7 @@ const usePanResponder = ({
           tmpTranslate = { x: nextTranslateX, y: nextTranslateY };
         }
 
-        scaleValue.setValue(nextScale);
+        scaleValue.current.setValue(nextScale);
         tmpScale = nextScale;
       }
 
@@ -334,7 +342,7 @@ const usePanResponder = ({
       if (tmpScale > 0) {
         if (tmpScale < initialScale || tmpScale > SCALE_MAX) {
           tmpScale = tmpScale < initialScale ? initialScale : SCALE_MAX;
-          Animated.timing(scaleValue, {
+          Animated.timing(scaleValue.current, {
             toValue: tmpScale,
             duration: 100,
             useNativeDriver: true,
@@ -391,7 +399,7 @@ const usePanResponder = ({
 
   const panResponder = useMemo(() => createPanResponder(handlers), [handlers]);
 
-  return [panResponder.panHandlers, scaleValue, translateValue];
+  return [panResponder.panHandlers, scaleValue.current, translateValue];
 };
 
 export default usePanResponder;

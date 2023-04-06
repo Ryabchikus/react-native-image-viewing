@@ -74,7 +74,7 @@ const ImageItem = ({
   }, [imageSrc, onLongPress]);
 
   const [panHandlers, scaleValue, translateValue] = usePanResponder({
-    initialScale: scale || 1,
+    initialScale: scale,
     initialTranslate: translate || { x: 0, y: 0 },
     onZoom: onZoomPerformed,
     doubleTapToZoomEnabled,
